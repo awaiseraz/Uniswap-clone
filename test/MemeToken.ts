@@ -3,7 +3,7 @@ import { network } from "hardhat";
 
 const {ethers} = await network.connect();
 
-describe("UNiswapV2", function () {
+describe("MemeToken", function () {
   let owner: any;
   let user: any;
   let token: any;
@@ -11,13 +11,13 @@ describe("UNiswapV2", function () {
   beforeEach(async function () {
     [owner, user] = await ethers.getSigners();
 
-    const UniswapV2 = await ethers.getContractFactory("UniswapV2");
+    const UniswapV2 = await ethers.getContractFactory("MemeToken");
     token = await UniswapV2.deploy(owner.address, owner.address);
   });
 
   it("Should deploy with initial supply to owner", async function () {
     const decimals = await token.decimals();
-    const initialSupply = 1_000_000n * 10n ** BigInt(decimals);
+    const initialSupply = 1_000_000_000n * 10n ** BigInt(decimals);
 
     expect(await token.totalSupply()).to.equal(initialSupply);
     expect(await token.balanceOf(owner.address)).to.equal(initialSupply);
