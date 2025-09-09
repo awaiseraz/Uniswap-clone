@@ -79,7 +79,7 @@ contract TokenPair is ITokenPair, ERC20, ReentrancyGuard {
                     if (liquidity > 0) _mint(rewardTo, liquidity);
                 }
             }
-        } else if (_kLast != 0) {
+        } else if (_kLast != 0) { 
             kLast = 0;
         }
     }
