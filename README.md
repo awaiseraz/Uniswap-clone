@@ -1,57 +1,74 @@
-# Sample Hardhat 3 Beta Project (`mocha` and `ethers`)
+# 🦄 Mini AMM DEX (Uniswap V2 Style)
 
-This project showcases a Hardhat 3 Beta project using `mocha` for tests and the `ethers` library for Ethereum interactions.
+This project is a minimalistic Automated Market Maker (AMM) implementation inspired by **Uniswap V2**.  
+It includes contracts for creating trading pairs, adding/removing liquidity, and swapping tokens with a constant product market maker model.
 
-To learn more about the Hardhat 3 Beta, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3 Beta](https://hardhat.org/hardhat3-beta-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+---
 
-## Project Overview
+## 📂 Project Structure
 
-This example project includes:
+- **contracts/**
+  - `PairFactory.sol` → Deploys and tracks token pairs using `CREATE2`.
+  - `TokenPair.sol` → Core pair contract handling:
+    - Liquidity provision (mint/burn LP tokens)
+    - Swaps with constant product rule
+    - Protocol fee reward
+  - `AMMRouter.sol` → High-level router:
+    - Add/remove liquidity
+    - Swap exact tokens or for exact tokens
+  - `libraries/Helper.sol` → Utility functions:
+    - Pair address calculation
+    - Swap math formulas
+    - Quote formula
+    - Safe ERC20 transfers
+- **interfaces/** → Minimal interfaces for router, factory, pair.
 
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using `mocha` and ethers.js
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+---
 
-## Usage
+## ⚙️ Core Concepts
 
-### Running Tests
+### 1. Constant Product Formula
+The AMM is based on the **invariant**:
+\[
+x . y = k
+\]
+Where:
+- `x` = reserve of token A  
+- `y` = reserve of token B  
+- `k` = constant product  
 
-To run all the tests in the project, execute the following command:
+Swaps must preserve this invariant (after applying fees).
 
-```shell
-npx hardhat test
-```
+---
 
-You can also selectively run the Solidity or `mocha` tests:
+### 2. Protocol / LP Rewards
 
-```shell
-npx hardhat test solidity
-npx hardhat test mocha
-```
+- Each **swap** on this DEX charges a **0.2% fee** (different from Uniswap’s 0.3%).  
+- Out of this fee:  
+  - **Liquidity Providers (LPs)** receive the majority of the reward.  
+  - The **protocol reward mechanism** can be optionally enabled.  
 
-### Make a deployment to Sepolia
+- If the **protocol reward is enabled**:  
+  - **10% of the collected swap fee (0.2%)** is sent to the protocol (`rewardTo` address).  
+  - The remaining **90%** of the fee is distributed to LPs.  
 
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
+- If the **protocol reward is disabled**:  
+  - The **entire 0.2% fee** is distributed to LPs.  
 
-To run the deployment to a local chain:
+- On multi-hop swaps (e.g., `TokenA → TokenB → TokenC`), the **0.2% fee is applied on each hop**, and protocol rewards are calculated accordingly.  
 
-```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
-```
+#### Example
 
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+- User swaps **1000 USDT → ETH** (single hop).  
+- Trading fee = `1000 × 0.2% = 2 USDT`.  
+  - If **protocol reward ON** → `0.2 USDT` (10% of 2) goes to the protocol, `1.8 USDT` to LPs.  
+  - If **protocol reward OFF** → `2 USDT` goes entirely to LPs.  
 
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
 
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
+---
 
-```shell
-npx hardhat keystore set SEPOLIA_PRIVATE_KEY
-```
+## 🛠️ How to Run
 
-After setting the variable, you can run the deployment with the Sepolia network:
-
-```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
-```
+1. Install dependencies:
+   ```bash
+   npm install
